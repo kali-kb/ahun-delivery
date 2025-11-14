@@ -1,0 +1,1 @@
+export const DRIZZLE_ORM = Symbol('DRIZZLE_ORM');
