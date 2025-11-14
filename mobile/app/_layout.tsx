@@ -16,6 +16,7 @@ import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, savePushTokenToServer } from '../utils/notifications';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
+import { ENV } from '../config/env';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -120,7 +121,7 @@ export default function RootLayout() {
         await savePushTokenToServer(
           session.data.user.id,
           pushToken,
-          process.env.EXPO_PUBLIC_API_URL || ''
+          ENV.API_URL
         );
       }
       

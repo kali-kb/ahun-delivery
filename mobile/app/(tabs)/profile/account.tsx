@@ -50,7 +50,7 @@ export default function MyAccount() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await apiPatch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${user.id}`, {
+            await apiPatch(`${ENV.API_URL}/api/users/${user.id}`, {
                 name,
                 phone
             });

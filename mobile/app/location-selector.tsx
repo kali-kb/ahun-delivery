@@ -8,10 +8,11 @@ import * as Location from 'expo-location';
 import { useLocationStore } from "../store/locationStore";
 import { authClient } from "../lib/authClient";
 import { apiPatch } from "../lib/api";
+import { ENV } from "../config/env";
 
 // --- IMPORTANT ---
 // Replace this with your own public Mapbox access token
-const MAPBOX_ACCESS_TOKEN= process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ? process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN : null;
+const MAPBOX_ACCESS_TOKEN = ENV.MAPBOX_ACCESS_TOKEN || null;
 Mapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 export default function LocationSelector() {
@@ -82,7 +83,7 @@ export default function LocationSelector() {
             // Save to backend if user is logged in
             const session = await authClient.getSession();
             if (session.data?.user?.id) {
-                await apiPatch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${session.data.user.id}/location`, {
+                await apiPatch(`${ENV.API_URL}/api/users/${session.data.user.id}/location`, {
                     latitude: markerLocation.latitude.toString(),
                     longitude: markerLocation.longitude.toString(),
                     address: displayAddress,

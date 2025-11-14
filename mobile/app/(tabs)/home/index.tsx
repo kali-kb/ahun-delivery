@@ -15,6 +15,7 @@ import { useCartStore } from "../../../store/cartStore";
 import { authClient } from "../../../lib/authClient";
 import NetworkError from "../../../components/NetworkError";
 import { apiGet } from "../../../lib/api";
+import { ENV } from "@/config/env";
 
 interface SessionData {
   session: {
@@ -226,7 +227,7 @@ export default function Index() {
     setHasValidLocation(true);
     
     try {
-      const popularUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/menus/popular/nearby?lat=${lat}&lon=${lon}&limit=10`;
+      const popularUrl = `${ENV.API_URL}/api/menus/popular/nearby?lat=${lat}&lon=${lon}&limit=10`;
       const response = await apiGet(popularUrl);
       
       if (response.ok) {
@@ -247,7 +248,7 @@ export default function Index() {
   const loadUserLocation = async (userId: string) => {
     try {
       setIsLoadingLocation(true);
-      const response = await apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/location`);
+      const response = await apiGet(`${ENV.API_URL}/api/users/${userId}/location`);
       if (response.ok) {
         const userData = await response.json();
         if (userData && userData.latitude && userData.longitude) {
@@ -282,9 +283,9 @@ export default function Index() {
 
       // Fetch categories, restaurants, and promos in parallel (NOT popular items)
       const [categoriesResponse, restaurantsResponse, promosResponse] = await Promise.all([
-        apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/categories`),
-        apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/restaurants`),
-        apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/promos`)
+        apiGet(`${ENV.API_URL}/api/categories`),
+        apiGet(`${ENV.API_URL}/api/restaurants`),
+        apiGet(`${ENV.API_URL}/api/promos`)
       ]);
 
       // Check if any request failed

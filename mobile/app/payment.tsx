@@ -8,8 +8,9 @@ import SuccessModal from '../components/SuccessModal';
 import { useLocationStore } from '../store/locationStore';
 import { authClient } from '../lib/authClient';
 import { apiPost } from '../lib/api';
+import { ENV } from '../config/env';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = ENV.API_URL;
 
 export default function PaymentScreen() {
     const router = useRouter();

@@ -1,7 +1,8 @@
 import { apiGet, apiPatch, apiPost, apiDelete } from '@/lib/api';
 import { create } from 'zustand';
+import { ENV } from '../config/env';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = ENV.API_URL;
 
 interface CartItem {
     id: number;

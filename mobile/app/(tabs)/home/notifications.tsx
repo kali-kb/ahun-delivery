@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState, useCallback } from "react";
 import { authClient } from "../../../lib/authClient";
 import { apiGet, apiPatch } from "../../../lib/api";
+import { ENV } from "@/config/env";
 
 interface Notification {
     id: number;
@@ -26,7 +27,7 @@ export default function NotificationsScreen() {
             const session = await authClient.getSession();
             if (session.data?.user?.id) {
                 setUserId(session.data.user.id);
-                const response = await apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${session.data.user.id}/notifications`);
+                const response = await apiGet(`${ENV.API_URL}/api/users/${session.data.user.id}/notifications`);
                 if (response.ok) {
                     const data = await response.json();
                     setNotifications(data);
@@ -53,7 +54,7 @@ export default function NotificationsScreen() {
         if (!userId) return;
         
         try {
-            await apiPatch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/notifications/${notificationId}`, {
+            await apiPatch(`${ENV.API_URL}/api/users/${userId}/notifications/${notificationId}`, {
                 isRead: true
             });
             

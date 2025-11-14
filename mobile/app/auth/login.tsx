@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { authClient } from '../../lib/authClient';
 import { useAuthStore } from '../../store/authStore';
 import { registerForPushNotificationsAsync, savePushTokenToServer } from '../../utils/notifications';
+import { ENV } from '../../config/env';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -43,7 +44,7 @@ export default function LoginScreen() {
                     await savePushTokenToServer(
                         session.data.user.id,
                         pushToken,
-                        process.env.EXPO_PUBLIC_API_URL || ''
+                        ENV.API_URL
                     );
                 }
             }
@@ -73,7 +74,7 @@ export default function LoginScreen() {
                     await savePushTokenToServer(
                         session.data.user.id,
                         pushToken,
-                        process.env.EXPO_PUBLIC_API_URL || ''
+                        ENV.API_URL
                     );
                 }
             }

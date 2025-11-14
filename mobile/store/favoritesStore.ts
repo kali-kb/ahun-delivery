@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { apiGet, apiPost, apiDelete } from '../lib/api';
+import { ENV } from '../config/env';
 
 interface MenuItem {
     id: number;
@@ -41,7 +42,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
                 }));
                 
                 // Then make API call
-                const response = await apiDelete(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/favorites/${existingFavorite.id}`);
+                const response = await apiDelete(`${ENV.API_URL}/api/users/${userId}/favorites/${existingFavorite.id}`);
                 
                 // If API call fails, revert the optimistic update
                 if (!response.ok) {
@@ -68,7 +69,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
                 });
                 
                 // Then make API call
-                const response = await apiPost(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/favorites`, {
+                const response = await apiPost(`${ENV.API_URL}/api/users/${userId}/favorites`, {
                     menuItemId: item.id
                 });
                 
@@ -105,7 +106,7 @@ export const useFavoritesStore = create<FavoritesState>((set, get) => ({
     },
     fetchUserFavorites: async (userId) => {
         try {
-            const response = await apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}/favorites`);
+            const response = await apiGet(`${ENV.API_URL}/api/users/${userId}/favorites`);
             if (response.ok) {
                 const favorites = await response.json();
                 set({ items: favorites });

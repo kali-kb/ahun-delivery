@@ -77,7 +77,9 @@
       "router": {},
       "eas": {
         "projectId": "07789548-612a-4b66-bb20-7f8d7f155116"
-      }
+      },
+      "EXPO_PUBLIC_API_URL": "https://ahun-delivery.onrender.com",
+      "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN": "pk.eyJ1Ijoia2FsZWIxIiwiYSI6ImNtaGI1cGRkazBld2wybHNkeGN1cm1yMjEifQ.cD_qBtf9kIOj87zU8V0Ngg"
     }
   }
 }

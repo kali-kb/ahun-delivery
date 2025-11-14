@@ -7,6 +7,8 @@ import React, { useEffect, useState } from "react";
 import { authClient } from "../../../../lib/authClient";
 import NetworkError from "../../../../components/NetworkError";
 import { apiGet } from "../../../../lib/api";
+import { ENV } from "@/config/env";
+
 
 
 interface MenuItem {
@@ -68,7 +70,7 @@ export default function CategoryMenu() {
                 const currentUserId = session.data.user.id;
                 // Fetch category details and favorites in parallel
                 const [categoryResponse] = await Promise.all([
-                    apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/categories/${id}`),
+                    apiGet(`${ENV.API_URL}/api/categories/${id}`),
                     fetchUserFavorites(currentUserId)
                 ]);
                 
@@ -84,7 +86,7 @@ export default function CategoryMenu() {
                 setCategoryData(data);
             } else {
                 // No session, just fetch category without userId
-                const response = await apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/categories/${id}`);
+                const response = await apiGet(`${ENV.API_URL}/api/categories/${id}`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to fetch category details');

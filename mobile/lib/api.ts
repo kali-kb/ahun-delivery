@@ -10,16 +10,8 @@ export async function authenticatedFetch(
   options: RequestInit = {}
 ): Promise<Response> {
   try {
-    console.log('🔐 Auth Fetch Debug:');
-    console.log('URL:', url);
-    
     // Get cookies from authClient (recommended by Better Auth docs)
     const cookies = authClient.getCookie();
-    
-    console.log('Cookies from authClient:', cookies ? 'Present' : 'Missing');
-    if (cookies) {
-      console.log('Cookie preview:', cookies.substring(0, 50) + '...');
-    }
     
     // Prepare headers
     const headers = new Headers(options.headers);
@@ -27,9 +19,6 @@ export async function authenticatedFetch(
     // Add cookies to request headers if available
     if (cookies) {
       headers.set('Cookie', cookies);
-      console.log('✅ Added Cookie header');
-    } else {
-      console.log('⚠️ No cookies available');
     }
     
     // Add content-type if not set and body exists
@@ -45,11 +34,6 @@ export async function authenticatedFetch(
       headers,
       credentials: 'omit', // Important: omit to avoid interfering with manual cookies
     });
-
-    console.log('Response status:', response.status);
-    if (response.status === 401) {
-      console.log('❌ 401 - Authentication failed');
-    }
     
     return response;
   } catch (error) {

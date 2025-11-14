@@ -10,8 +10,9 @@ import NetworkError from "../../../../components/NetworkError";
 import { apiGet } from "../../../../lib/api";
 
 
+import { ENV } from "../../../../config/env";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = ENV.API_URL;
 
 export default function MenuItemDetail() {
     const router = useRouter();

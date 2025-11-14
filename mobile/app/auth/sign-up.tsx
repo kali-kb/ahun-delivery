@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { authClient } from '../../lib/authClient';
 import { useAuthStore } from '../../store/authStore';
 import { registerForPushNotificationsAsync, savePushTokenToServer } from '../../utils/notifications';
+import { ENV } from '../../config/env';
 
 const ValidationCheck = ({ text, isValid }: { text: string, isValid: boolean }) => (
     <View style={styles.validationRow}>
@@ -83,7 +84,7 @@ export default function SignUpScreen() {
                     await savePushTokenToServer(
                         session.data.user.id,
                         pushToken,
-                        process.env.EXPO_PUBLIC_API_URL || ''
+                        ENV.API_URL
                     );
                 }
             }
@@ -113,7 +114,7 @@ export default function SignUpScreen() {
                     await savePushTokenToServer(
                         session.data.user.id,
                         pushToken,
-                        process.env.EXPO_PUBLIC_API_URL || ''
+                        ENV.API_URL
                     );
                 }
             }

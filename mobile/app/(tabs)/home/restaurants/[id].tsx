@@ -9,6 +9,7 @@ import { useFavoritesStore } from "../../../../store/favoritesStore";
 import { authClient } from "../../../../lib/authClient";
 import NetworkError from "../../../../components/NetworkError";
 import { apiGet } from "../../../../lib/api";
+import { ENV } from "@/config/env";
 
 interface MenuItem {
     id: number;
@@ -57,7 +58,7 @@ export default function RestaurantDetail() {
         try {
             setHasError(false);
             setIsLoading(true);
-            const response = await apiGet(`${process.env.EXPO_PUBLIC_API_URL}/api/restaurants/${id}`);
+            const response = await apiGet(`${ENV.API_URL}/api/restaurants/${id}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch restaurant details');
             }
