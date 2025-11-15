@@ -5,7 +5,7 @@ import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import CartFAB from '../components/CartFAB';
 import CartSheet from '../components/CartSheet';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, Linking } from 'react-native';
 import { useUIStore } from '../store/uiStore';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
@@ -32,6 +32,7 @@ export default function RootLayout() {
 
   const [iconsLoaded, setIconsLoaded] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [isOAuthInProgress, setIsOAuthInProgress] = useState(false);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const setCartSheetOpen = useUIStore((state) => state.setCartSheetOpen);
@@ -72,33 +73,130 @@ export default function RootLayout() {
   // Check authentication status on app load
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('[Layout] Starting auth check', {
+        timestamp: new Date().toISOString()
+      });
+      
       try {
-        const session = await authClient.getSession();
-        const hasSession = !!session.data?.user;
-        setAuthenticated(hasSession);
+        // Check if we're returning from OAuth by detecting app:// deep links
+        const initialUrl = await Linking.getInitialURL();
+        console.log('[Layout] Initial URL:', initialUrl);
+        
+        if (initialUrl?.startsWith('app://')) {
+          console.log('[Layout] Detected OAuth callback URL (app:// deep link), setting OAuth in progress...');
+          setIsOAuthInProgress(true);
+          
+          // Use retry logic to wait for session to be fully established
+          let session = null;
+          let retryCount = 0;
+          const maxRetries = 5;
+          const delays = [500, 800, 1000, 1200, 1500]; // Progressive delays
+          
+          while (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delays[retryCount]));
+            
+            console.log(`[Layout] Initial load attempt ${retryCount + 1}/${maxRetries}: Checking session...`);
+            session = await authClient.getSession();
+            
+            console.log('[Layout] Session check result:', {
+              hasSession: !!session,
+              hasUser: !!session.data?.user,
+              userId: session.data?.user?.id,
+              attempt: retryCount + 1,
+              timestamp: new Date().toISOString()
+            });
+            
+            if (session?.data?.user) {
+              console.log('[Layout] Session validated successfully');
+              setAuthenticated(true);
+              break;
+            }
+            
+            retryCount++;
+            if (retryCount < maxRetries) {
+              console.log(`[Layout] Session not ready, retrying in ${delays[retryCount]}ms...`);
+            }
+          }
+          
+          if (!session?.data?.user) {
+            console.error('[Layout] Session not established after OAuth on initial load', {
+              retriesAttempted: maxRetries,
+              timestamp: new Date().toISOString()
+            });
+            setAuthenticated(false);
+          }
+        } else {
+          // Normal app launch, just check for existing session
+          console.log('[Layout] Normal app launch, fetching session from authClient...');
+          const session = await authClient.getSession();
+          const hasSession = !!session.data?.user;
+          
+          console.log('[Layout] Auth check result:', {
+            hasSession,
+            userId: session.data?.user?.id,
+            userEmail: session.data?.user?.email,
+            timestamp: new Date().toISOString()
+          });
+          
+          setAuthenticated(hasSession);
+        }
       } catch (error) {
+        console.error('[Layout] Auth check error:', {
+          error,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString()
+        });
         setAuthenticated(false);
       } finally {
         setIsAuthChecked(true);
+        setIsOAuthInProgress(false);
+        console.log('[Layout] Auth check completed');
       }
     };
     checkAuth();
   }, [setAuthenticated]);
 
   // Handle navigation based on auth state
+  // Updated to wait for OAuth completion before navigating
   useEffect(() => {
-    if (!isAuthChecked || !fontsLoaded || !iconsLoaded) return;
+    console.log('[Layout] Navigation effect triggered:', {
+      isAuthChecked,
+      fontsLoaded,
+      iconsLoaded,
+      isAuthenticated,
+      isOAuthInProgress,
+      segments,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Wait for OAuth completion before proceeding with navigation
+    if (!isAuthChecked || !fontsLoaded || !iconsLoaded || isOAuthInProgress) {
+      console.log('[Layout] Waiting for initialization to complete', {
+        isAuthChecked,
+        fontsLoaded,
+        iconsLoaded,
+        isOAuthInProgress
+      });
+      return;
+    }
 
     const inAuthGroup = segments[0] === 'auth';
 
     if (!isAuthenticated && !inAuthGroup) {
       // User is not authenticated and not on auth screen, redirect to login
+      console.log('[Layout] Redirecting to login (not authenticated)');
       router.replace('/auth/login');
     } else if (isAuthenticated && inAuthGroup) {
       // User is authenticated but on auth screen, redirect to home
+      console.log('[Layout] Redirecting to home (authenticated)');
       router.replace('/home');
+    } else {
+      console.log('[Layout] No navigation needed:', {
+        isAuthenticated,
+        inAuthGroup
+      });
     }
-  }, [isAuthenticated, isAuthChecked, segments, fontsLoaded, iconsLoaded]);
+  }, [isAuthenticated, isAuthChecked, segments, fontsLoaded, iconsLoaded, isOAuthInProgress]);
 
   useEffect(() => {
     if ((fontsLoaded || fontError) && iconsLoaded && isAuthChecked) {
@@ -132,6 +230,82 @@ export default function RootLayout() {
     }
     setupNotifications();
   }, [isAuthenticated, isAuthChecked]);
+
+  // Setup deep link listener for OAuth callbacks
+  useEffect(() => {
+    console.log('[Layout] Setting up deep link listener');
+    
+    const subscription = Linking.addEventListener('url', async (event) => {
+      console.log('[Layout] Deep link received:', {
+        url: event.url,
+        timestamp: new Date().toISOString(),
+        isOAuthCallback: event.url.startsWith('app://')
+      });
+      
+      // If this is an OAuth callback, set the in-progress flag and wait for session to be ready
+      if (event.url.startsWith('app://')) {
+        console.log('[Layout] OAuth callback detected via listener, waiting for session to be ready...');
+        setIsOAuthInProgress(true);
+        
+        // Use retry logic to wait for session to be fully established
+        let session = null;
+        let retryCount = 0;
+        const maxRetries = 5;
+        const delays = [500, 800, 1000, 1200, 1500]; // Progressive delays
+        
+        while (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, delays[retryCount]));
+          
+          console.log(`[Layout] Attempt ${retryCount + 1}/${maxRetries}: Checking session...`);
+          session = await authClient.getSession();
+          
+          console.log('[Layout] Session check result:', {
+            hasSession: !!session,
+            hasUser: !!session.data?.user,
+            userId: session.data?.user?.id,
+            attempt: retryCount + 1,
+            timestamp: new Date().toISOString()
+          });
+          
+          if (session?.data?.user) {
+            console.log('[Layout] Session validated successfully, setting authenticated');
+            setAuthenticated(true);
+            
+            // Register push token
+            const pushToken = await registerForPushNotificationsAsync();
+            if (pushToken && session.data.user.id) {
+              await savePushTokenToServer(
+                session.data.user.id,
+                pushToken,
+                ENV.API_URL
+              );
+            }
+            break;
+          }
+          
+          retryCount++;
+          if (retryCount < maxRetries) {
+            console.log(`[Layout] Session not ready, retrying in ${delays[retryCount]}ms...`);
+          }
+        }
+        
+        if (!session?.data?.user) {
+          console.error('[Layout] Session not established after OAuth callback', {
+            retriesAttempted: maxRetries,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        setIsOAuthInProgress(false);
+        console.log('[Layout] OAuth callback processing complete');
+      }
+    });
+
+    return () => {
+      console.log('[Layout] Removing deep link listener');
+      subscription.remove();
+    };
+  }, [setAuthenticated]);
 
   // Setup notification listeners
   useEffect(() => {

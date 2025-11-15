@@ -34,7 +34,10 @@ const db = drizzle(client, { schema: authSchema });
 export const auth = betterAuth({
     plugins: [expo()],
     trustedOrigins: ["exp://", "http://localhost", "app://"],
-    advanced: { disableOriginCheck: true },
+    advanced: { 
+        disableOriginCheck: true,
+        useSecureCookies: false, // Important for mobile compatibility
+    },
     baseURL: process.env.BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
     database: drizzleAdapter(db, {
@@ -52,10 +55,25 @@ export const auth = betterAuth({
         },
     },
     async redirect({ provider, request, callbackURL }) {
-        // Log to debug origin issues
-        console.log('Callback URL:', request.url);
-        console.log('Request origin:', request.headers.origin || 'No origin');
-        return `${callbackURL}/home`; // Dynamically redirect to the client's requested URL
+        // Log detailed debug information for OAuth redirect
+        console.log('OAuth Redirect Debug:', {
+            provider,
+            requestUrl: request.url,
+            origin: request.headers.origin || 'No origin header',
+            callbackURL,
+            userAgent: request.headers['user-agent'] || 'No user agent',
+        });
+        
+        // For mobile apps, ensure we use the app scheme correctly
+        if (callbackURL.startsWith('app://')) {
+            console.log('Mobile app callback detected, returning:', callbackURL);
+            return callbackURL;
+        }
+        
+        // For web clients, append /home
+        const redirectUrl = `${callbackURL}/home`;
+        console.log('Web callback detected, returning:', redirectUrl);
+        return redirectUrl;
     },
     // Add other providers or plugins as needed
     // plugins: [

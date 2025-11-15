@@ -99,32 +99,90 @@ export default function SignUpScreen() {
 
     const handleGoogleSignIn = async () => {
         setLoading(true);
+        console.log('[SignUp] Google Sign-In initiated', {
+            timestamp: new Date().toISOString(),
+            callbackURL: 'app://',
+            provider: 'google'
+        });
+        
         try {
+            console.log('[SignUp] Calling authClient.signIn.social...');
             await authClient.signIn.social({
                 provider: 'google',
                 callbackURL: 'app://',
             });
-            setAuthenticated(true);
             
-            // Register push token after successful sign up
-            const session = await authClient.getSession();
-            if (session.data?.user?.id) {
-                const pushToken = await registerForPushNotificationsAsync();
-                if (pushToken) {
-                    await savePushTokenToServer(
-                        session.data.user.id,
-                        pushToken,
-                        ENV.API_URL
-                    );
-                }
-            }
+            console.log('[SignUp] OAuth browser flow completed');
+            // The _layout.tsx will handle the deep link callback and session validation
+            // We just need to wait here and let the OAuth flow complete naturally
             
-            router.replace('/home');
         } catch (error: any) {
-            // This catch block will run if the user cancels the sign-in from the browser.
-            console.log("Google Sign-In cancelled or failed:", error.message);
+            // Log all auth failures with full context
+            console.error('[SignUp] Google Sign-In error:', {
+                message: error.message,
+                name: error.name,
+                stack: error.stack,
+                errorObject: error,
+                timestamp: new Date().toISOString(),
+                context: 'handleGoogleSignIn catch block'
+            });
+            
+            // Distinguish between user cancellation and actual errors
+            const errorMessage = error.message?.toLowerCase() || '';
+            const isCancellation = 
+                errorMessage.includes('cancel') || 
+                errorMessage.includes('dismissed') || 
+                errorMessage.includes('user_cancelled') ||
+                errorMessage.includes('user cancelled') ||
+                errorMessage.includes('abort');
+            
+            if (isCancellation) {
+                // User cancelled - don't show error alert
+                console.log('[SignUp] User cancelled Google sign-in - no alert shown');
+            } else {
+                // Actual error - show specific error message to user
+                let userMessage = 'Could not complete Google sign-in. Please try again.';
+                
+                // Provide specific error messages for known scenarios
+                if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+                    userMessage = 'Authentication timed out. Please check your internet connection and try again.';
+                    console.error('[SignUp] Timeout error detected', {
+                        originalMessage: error.message,
+                        timestamp: new Date().toISOString()
+                    });
+                } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+                    userMessage = 'Network error. Please check your internet connection and try again.';
+                    console.error('[SignUp] Network error detected', {
+                        originalMessage: error.message,
+                        timestamp: new Date().toISOString()
+                    });
+                } else if (errorMessage.includes('session')) {
+                    userMessage = error.message || 'Session could not be established. Please try again.';
+                    console.error('[SignUp] Session error detected', {
+                        originalMessage: error.message,
+                        timestamp: new Date().toISOString()
+                    });
+                } else if (error.message) {
+                    // Use the original error message if it's informative
+                    userMessage = error.message;
+                    console.error('[SignUp] Generic error with message', {
+                        originalMessage: error.message,
+                        timestamp: new Date().toISOString()
+                    });
+                } else {
+                    console.error('[SignUp] Unknown error without message', {
+                        error: error,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                Alert.alert('Sign In Failed', userMessage);
+            }
         } finally {
             setLoading(false);
+            console.log('[SignUp] Google Sign-In flow completed (finally block)', {
+                timestamp: new Date().toISOString()
+            });
         }
     };
 

@@ -21,6 +21,9 @@ build/
 .DS_Store
 Thumbs.db
 
+
+.kiro
+
 # Mobile specific
 mobile/android/app/build/
 mobile/ios/Pods/
